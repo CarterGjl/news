@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -46,8 +47,11 @@ public class TopNewsFragmet extends Fragment {
     private String mParam1;
     private String mParam2;
 
+    private String type = "top";
     private OnFragmentInteractionListener mListener;
     private NewsListAdapter mNewsListAdapter;
+    private NewsGetter mNewsGetter;
+    private RecyclerView mRvNews;
 
     public TopNewsFragmet() {
         // Required empty public constructor
@@ -78,6 +82,7 @@ public class TopNewsFragmet extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+        mNewsGetter = new NewsGetter();
         DbOpenHelper dbOpenHelper = new DbOpenHelper(getActivity(),"news");
         SQLiteDatabase readableDatabase = dbOpenHelper.getWritableDatabase();
         Cursor news = readableDatabase.query("news", new String[]{"title"}, null, null, null, null, null);
@@ -94,38 +99,57 @@ public class TopNewsFragmet extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_news, container, false);
         //初始化frament
-        RecyclerView rvNews = view.findViewById(R.id.rv_list_news);
-        rvNews.setLayoutManager(new LinearLayoutManager(UiUtil.getContext()));
-        NewsGetter newsGetter = new NewsGetter();
-        String type = "top";
-        newsGetter.updateContent(new OnGetTheNewsFinishListener() {
+        mRvNews = view.findViewById(R.id.rv_list_news);
+        SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.srl);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                mNewsGetter.updateContent(new OnGetTheNewsFinishListener() {
+                    @Override
+                    public void finish(List<NewsInfo.ResultBean.DataBean> data) {
+//                Log.d(TAG, "finish: "+data.get(0).getTitle());
+                        swipeRefreshLayout.setRefreshing(false);
+                        setData(data);
+                    }
+                },type,getActivity());
+            }
+        });
+        mRvNews.setLayoutManager(new LinearLayoutManager(UiUtil.getContext()));
+
+
+
+        mNewsGetter.updateContent(new OnGetTheNewsFinishListener() {
             @Override
             public void finish(List<NewsInfo.ResultBean.DataBean> data) {
 //                Log.d(TAG, "finish: "+data.get(0).getTitle());
-                mNewsListAdapter = new NewsListAdapter();
-                mNewsListAdapter.updateNews(data);
-                mNewsListAdapter.notifyDataSetChanged();
-                rvNews.setAdapter(mNewsListAdapter);
-                mNewsListAdapter.setOnClickNewsListener(new NewsListAdapter.OnClickNewsListener() {
-                    @Override
-                    public void onClickNews(NewsInfo.ResultBean.DataBean dataBean) {
-                        Intent intent = new Intent(UiUtil.getContext(),NewsDetailActivity.class);
-                        String url = dataBean.getUrl();
-                        intent.putExtra("url",url);
-                        startActivity(intent);
-                    }
-
-                    @Override
-                    public void onLongClickListener(NewsInfo.ResultBean.DataBean dataBean) {
-
-                        ShareUtil.getInstance().showShare(dataBean.getTitle(),dataBean.getUrl());
-                    }
-                });
+                setData(data);
             }
         },type,getActivity());
 
 
         return view;
+    }
+
+    private void setData(List<NewsInfo.ResultBean.DataBean> data) {
+        mNewsListAdapter = new NewsListAdapter();
+        mNewsListAdapter.updateNews(data);
+        mNewsListAdapter.notifyDataSetChanged();
+        mRvNews.setAdapter(mNewsListAdapter);
+        mNewsListAdapter.setOnClickNewsListener(new NewsListAdapter.OnClickNewsListener() {
+            @Override
+            public void onClickNews(NewsInfo.ResultBean.DataBean dataBean) {
+                Intent intent = new Intent(UiUtil.getContext(),NewsDetailActivity.class);
+                String url = dataBean.getUrl();
+                intent.putExtra("url",url);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onLongClickListener(NewsInfo.ResultBean.DataBean dataBean) {
+
+                ShareUtil.getInstance().showShare(dataBean.getTitle(),dataBean.getUrl());
+            }
+        });
     }
 
     public void onButtonPressed(Uri uri) {
