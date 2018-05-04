@@ -1,5 +1,8 @@
 package news.design.graduation.com.news.http;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -17,10 +20,12 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Observer;
+import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
+import news.design.graduation.com.news.R;
 import news.design.graduation.com.news.listener.OnGetTheNewsFinishListener;
 import news.design.graduation.com.news.newsInfo.DataBean;
 import news.design.graduation.com.news.newsInfo.NewsInfo;
@@ -39,9 +44,11 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class NewsGetter {
 
     private static final String TAG = "NewsGetter";
+    private ProgressDialog mProgressDialog;
 
 
-    public void updateContent(OnGetTheNewsFinishListener onGetTheNewsFinishListener,String type) {
+    @SuppressLint("CheckResult")
+    public void updateContent(OnGetTheNewsFinishListener onGetTheNewsFinishListener, String type,Activity activity) {
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("http://v.juhe.cn/")
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
@@ -60,9 +67,70 @@ public class NewsGetter {
         builder.addCallAdapterFactory(RxJava2CallAdapterFactory.create());
         builder.addConverterFactory(GsonConverterFactory.create());*/
         NewsService newsService = retrofit.create(NewsService.class);
-        Call<NewsInfo> responser = newsService.getResponser("1c46093f956ea7fc162f8742194913e4",
+        Observable<NewsInfo> responser = newsService.getResponser("1c46093f956ea7fc162f8742194913e4",
                 type);
-        responser.enqueue(new Callback<NewsInfo>() {
+        responser.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe(new Consumer<Disposable>() {
+                    @Override
+                    public void accept(Disposable disposable) throws Exception {
+
+                        showProgressDialog(activity);
+                    }
+                }).subscribe(new Consumer<NewsInfo>() {
+            @Override
+            public void accept(NewsInfo newsInfo) throws Exception {
+
+                mProgressDialog.dismiss();
+                if (newsInfo.getResult() == null) {
+                    Toast.makeText(UiUtil.getContext(), "服务器端异常", Toast.LENGTH_SHORT).show();
+                    // TODO: 2018/4/16 显示本地缓存
+                    Observable.create(new ObservableOnSubscribe<List<NewsInfo.ResultBean.DataBean>>() {
+                        @Override
+                        public void subscribe(ObservableEmitter<List<NewsInfo.ResultBean.DataBean>> e) throws Exception {
+                            e.onNext(getNewsFromDataBase(writableDatabase,type));
+                        }
+                    }).subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Consumer<List<NewsInfo.ResultBean.DataBean>>() {
+                                @Override
+                                public void accept(List<NewsInfo.ResultBean.DataBean> dataBeans) throws Exception {
+                                    onGetTheNewsFinishListener.finish(dataBeans);
+                                }
+                            });
+                }else {
+
+                    List<NewsInfo.ResultBean.DataBean> data = newsInfo.getResult().getData();
+                    onGetTheNewsFinishListener.finish(data);
+                    Observable.create(new ObservableOnSubscribe<Boolean>() {
+                        @Override
+                        public void subscribe(ObservableEmitter<Boolean> e) throws Exception {
+                            writeToDataBase(data, writableDatabase, typeDBWritableDatabase, type);
+                            e.onNext(true);
+                        }
+                    }).subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(new Consumer<Boolean>() {
+                                @Override
+                                public void accept(Boolean aBoolean) throws Exception {
+                                    if (aBoolean){
+                                        Toast.makeText(UiUtil.getContext(), "缓存完成", Toast.LENGTH_SHORT)
+                                                .show();
+                                    }
+                                }
+                            });
+                }
+            }
+
+        }, new Consumer<Throwable>() {
+            @Override
+            public void accept(Throwable throwable) throws Exception {
+
+                Toast.makeText(UiUtil.getContext(), "服务器异常", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+       /* responser.enqueue(new Callback<NewsInfo>() {
             @Override
             public void onResponse(Call<NewsInfo> call, Response<NewsInfo> response) {
                 if (response.isSuccessful()) {
@@ -119,11 +187,21 @@ public class NewsGetter {
             public void onFailure(Call<NewsInfo> call, Throwable t) {
                 Toast.makeText(UiUtil.getContext(), "请求失败", Toast.LENGTH_SHORT).show();
             }
-        });
+        });*/
 
 
     }
 
+    private void showProgressDialog(Activity activity) {
+        mProgressDialog = new ProgressDialog(activity);
+        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.setCanceledOnTouchOutside(false);
+        mProgressDialog.setMessage("连接ing  请等候");
+        mProgressDialog.setTitle("提示");
+        mProgressDialog.setIcon(R.drawable.small_icon);
+        mProgressDialog.show();
+    }
     private void writeToDataBase(List<NewsInfo.ResultBean.DataBean> data, SQLiteDatabase writableDatabase, SQLiteDatabase typeDBWritableDatabase, String type) {
         for (int i = 0; i < data.size(); i++) {
             Log.d(TAG, "onResponse: "+data.get(i).getTitle());

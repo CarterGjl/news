@@ -31,10 +31,10 @@
             android:enabled="true"
             android:exported="true" />
 
-        <activity android:name=".activity.SearchNewsActivity"
-            android:theme="@style/AppTheme.NoActionBar">
-
-        </activity>
+        <activity
+            android:name=".activity.SearchNewsActivity"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
+        <activity android:name=".activity.PhotoActivity"></activity>
     </application>
 
 </manifest>

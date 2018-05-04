@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Process;
 
+import com.mob.MobSDK;
 
 
 public class NewsApplication extends Application {
@@ -31,5 +32,6 @@ public class NewsApplication extends Application {
         mContext = getApplicationContext();
         mHandler = new Handler();
         mMainThreadId = Process.myTid();
+        MobSDK.init(this);
     }
 }

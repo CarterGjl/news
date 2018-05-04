@@ -97,9 +97,14 @@ public class InternationalNewsFragment extends Fragment {
                         intent.putExtra("url", url);
                         startActivity(intent);
                     }
+
+                    @Override
+                    public void onLongClickListener(NewsInfo.ResultBean.DataBean dataBean) {
+
+                    }
                 });
             }
-        }, type);
+        }, type,getActivity());
         return view;
     }
 

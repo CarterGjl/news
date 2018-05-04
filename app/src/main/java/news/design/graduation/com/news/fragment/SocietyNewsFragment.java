@@ -91,9 +91,14 @@ public class SocietyNewsFragment extends Fragment {
                     public void onClickNews(NewsInfo.ResultBean.DataBean dataBean) {
 
                     }
+
+                    @Override
+                    public void onLongClickListener(NewsInfo.ResultBean.DataBean dataBean) {
+
+                    }
                 });
             }
-        },type);
+        },type,getActivity());
         return view;
     }
 

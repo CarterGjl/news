@@ -62,6 +62,14 @@ public class NewsListAdapter extends RecyclerView.Adapter<NewsListAdapter.ViewHo
                 mOnClickNewsListener.onClickNews(dataBean);
             }
         });
+        holder.mCardView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+
+                mOnClickNewsListener.onLongClickListener(mBeanArrayList.get(position));
+                return true;
+            }
+        });
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
@@ -81,5 +89,6 @@ public class NewsListAdapter extends RecyclerView.Adapter<NewsListAdapter.ViewHo
     public interface OnClickNewsListener{
 
         void onClickNews(NewsInfo.ResultBean.DataBean dataBean);
+        void onLongClickListener(NewsInfo.ResultBean.DataBean dataBean);
     }
 }

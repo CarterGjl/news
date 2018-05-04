@@ -23,6 +23,7 @@ import news.design.graduation.com.news.http.NewsGetter;
 import news.design.graduation.com.news.listener.OnGetTheNewsFinishListener;
 import news.design.graduation.com.news.newsInfo.NewsInfo;
 import news.design.graduation.com.news.util.DbOpenHelper;
+import news.design.graduation.com.news.util.ShareUtil;
 import news.design.graduation.com.news.util.UiUtil;
 
 /**
@@ -113,18 +114,24 @@ public class TopNewsFragmet extends Fragment {
                         intent.putExtra("url",url);
                         startActivity(intent);
                     }
+
+                    @Override
+                    public void onLongClickListener(NewsInfo.ResultBean.DataBean dataBean) {
+
+                        ShareUtil.getInstance().showShare(dataBean.getTitle(),dataBean.getUrl());
+                    }
                 });
             }
-        },type);
+        },type,getActivity());
 
 
         return view;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
+
         }
     }
 

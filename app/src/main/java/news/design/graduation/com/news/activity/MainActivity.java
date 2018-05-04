@@ -1,6 +1,7 @@
 package news.design.graduation.com.news.activity;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -12,7 +13,10 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v7.widget.ShareActionProvider;
+import android.view.KeyEvent;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -22,6 +26,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -152,6 +157,23 @@ public class MainActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
+        MenuItem item = menu.findItem(R.id.action_share);
+        ShareActionProvider shareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+        Intent sendIntent = new Intent();
+        try {
+            String appDir = getPackageManager().getApplicationInfo("news.design.graduation.com.news", 0)
+                    .sourceDir;
+            appDir = "//" + appDir;
+            Uri uri = Uri.parse(appDir);
+
+            sendIntent.setAction(Intent.ACTION_SEND);
+            sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
+            sendIntent.setType("*/*");
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        shareActionProvider.setShareIntent(sendIntent);
         return true;
     }
 
@@ -163,11 +185,29 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_share) {
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private long time = 0;
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if ((System.currentTimeMillis() - time) > 1000) {
+                Toast.makeText(this, "再按一次返回桌面", Toast.LENGTH_SHORT).show();
+                time = System.currentTimeMillis();
+            } else {
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                intent.addCategory(Intent.CATEGORY_HOME);
+                startActivity(intent);
+            }
+            return true;
+        } else {
+            return super.onKeyDown(keyCode, event);
+        }
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -183,10 +223,12 @@ public class MainActivity extends AppCompatActivity
                 public void finish(List<NewsInfo.ResultBean.DataBean> data) {
 
                 }
-            },"toutiao");
+            },"toutiao",this);
             // Handle the camera action
         } else if (id == R.id.nav_gallery) {
 
+            Intent intent = new Intent(this, PhotoActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_slideshow) {
 
         } else if (id == R.id.nav_manage) {

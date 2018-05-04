@@ -82,9 +82,4 @@ public class SearchAdapter extends Adapter<SearchAdapter.ViewHolder> {
     public void setOnClickNewsListener(NewsListAdapter.OnClickNewsListener onClickNewsListener){
         mOnClickNewsListener = onClickNewsListener;
     }
-
-    public interface OnClickNewsListener{
-
-        void onClickNews(NewsInfo.ResultBean.DataBean dataBean);
-    }
 }

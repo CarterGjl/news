@@ -48,6 +48,13 @@ public class SearchNewsActivity extends AppCompatActivity {
                 intent.putExtra("url",url);
                 startActivity(intent);
             }
+
+            @Override
+            public void onLongClickListener(NewsInfo.ResultBean.DataBean dataBean) {
+
+
+
+            }
         });
         re.setAdapter(mSearchAdapter);
     }

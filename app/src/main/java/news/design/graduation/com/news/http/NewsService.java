@@ -1,11 +1,13 @@
 package news.design.graduation.com.news.http;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import io.reactivex.Observable;
 import news.design.graduation.com.news.newsInfo.DataBean;
 import news.design.graduation.com.news.newsInfo.NewsInfo;
 import news.design.graduation.com.news.newsInfo.NewsInfo1;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
@@ -17,7 +19,7 @@ import retrofit2.http.Query;
 public interface NewsService {
 
     @GET("toutiao/index")
-    Call<NewsInfo> getResponser(@Query("key")String key, @Query("type")String
+    Observable<NewsInfo> getResponser(@Query("key")String key, @Query("type")String
             type);
 
 }
